@@ -7,34 +7,44 @@ CREATE TABLE clients (
                          remise DOUBLE PRECISION DEFAULT 0.0
 );
 
+CREATE TYPE etat_projet AS ENUM (
+    'en_cours', 'termine', 'annule'
+);
+
 CREATE TABLE projets (
                          id SERIAL PRIMARY KEY,
                          nom_projet VARCHAR(255) NOT NULL,
-                         marge_beneficiaire DOUBLE PRECISION NOT NULL,
-                         cout_total DOUBLE PRECISION DEFAULT 0.0,
-                         etat_projet VARCHAR(50) CHECK (etat_projet IN ('En cours', 'Terminé', 'Annulé')),
+                         marge_beneficiaire DOUBLE PRECISION,
+                         cout_total DOUBLE PRECISION DEFAULT 0.0 ,
+                         etat_projet etat_projet DEFAULT 'en_cours',
+                         surface DOUBLE PRECISION NOT NULL,
                          client_id INT REFERENCES clients(id) ON DELETE CASCADE
+);
+
+CREATE TYPE TypeComposant AS ENUM (
+    'Materiel', 'Main_doeuvre'
 );
 
 CREATE TABLE composants (
                             id SERIAL PRIMARY KEY,
                             nom VARCHAR(255) NOT NULL,
-                            cout_unitaire DOUBLE PRECISION NOT NULL,
-                            quantite DOUBLE PRECISION NOT NULL,
-                            type_composant VARCHAR(50) CHECK (type_composant IN ('Matériel', 'Main-dœuvre')) NOT NULL,
-                            taux_tva DOUBLE PRECISION NOT NULL,
-                            cout_transport DOUBLE PRECISION DEFAULT 0.0,
-                            coefficient_qualite DOUBLE PRECISION DEFAULT 1.0,
-                            taux_horaire DOUBLE PRECISION DEFAULT 0.0,
-                            heures_travail DOUBLE PRECISION DEFAULT 0.0,
-                            productivite_ouvrier DOUBLE PRECISION DEFAULT 1.0
+                            type_composant TypeComposant NOT NULL,
+                            taux_tva DOUBLE PRECISION,
+                            projet_id INT REFERENCES projets(id) ON DELETE CASCADE
 );
 
-CREATE TABLE projet_composants (
-                                   projet_id INT REFERENCES projets(id) ON DELETE CASCADE,
-                                   composant_id INT REFERENCES composants(id) ON DELETE CASCADE,
-                                   PRIMARY KEY (projet_id, composant_id)
-);
+CREATE TABLE materiaux (
+                           cout_transport DOUBLE PRECISION DEFAULT 0.0,
+                           cout_unitaire DOUBLE PRECISION NOT NULL,
+                           quantite DOUBLE PRECISION NOT NULL,
+                           coefficient_qualite DOUBLE PRECISION DEFAULT 1.0
+) INHERITS (composants);
+
+CREATE TABLE main_doeuvre (
+                              taux_horaire DOUBLE PRECISION NOT NULL,
+                              heures_travail DOUBLE PRECISION NOT NULL,
+                              productivite_ouvrier DOUBLE PRECISION DEFAULT 1.0
+) INHERITS (composants);
 
 CREATE TABLE devis (
                        id SERIAL PRIMARY KEY,
@@ -43,10 +53,4 @@ CREATE TABLE devis (
                        date_validite DATE NOT NULL,
                        accepte BOOLEAN DEFAULT FALSE,
                        projet_id INT REFERENCES projets(id) ON DELETE CASCADE
-);
-
-CREATE TABLE remises (
-                         id SERIAL PRIMARY KEY,
-                         type_client VARCHAR(50) CHECK (type_client IN ('Professionnel', 'Particulier')),
-                         taux_remise DOUBLE PRECISION NOT NULL
 );
