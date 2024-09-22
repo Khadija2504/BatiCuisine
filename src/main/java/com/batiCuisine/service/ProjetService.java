@@ -6,6 +6,7 @@ import com.batiCuisine.model.Project;
 import com.batiCuisine.repository.imp.ProjetRepository;
 
 import java.sql.SQLException;
+import java.util.Optional;
 
 public class ProjetService {
     EtatProjet etatProjet;
@@ -15,7 +16,16 @@ public class ProjetService {
         return projetRepository.addProject(project);
     }
 
-    public void updateProjectCost(int projetId, double coutTotal) throws SQLException {
-        projetRepository.updateProjectCost(projetId, coutTotal);
+    public Project getProjectById(int projetId) throws SQLException {
+        Optional<Project> project = projetRepository.findById(projetId);
+        if (project.isPresent()) {
+            return project.get();
+        } else {
+            throw new SQLException("Aucun projet trouvé avec l'ID " + projetId);
+        }
+    }
+
+    public void updateProjectCost(int projetId, double coutTotal, double margeBeneficiaire) throws SQLException {
+        projetRepository.updateCoutTotal(projetId, coutTotal, margeBeneficiaire);
     }
 }

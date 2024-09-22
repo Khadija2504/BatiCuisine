@@ -9,7 +9,8 @@ public class Composant {
     private double tauxTva;
     private int projetId;
 
-    public Composant(String nom, TypeComposant typeComposant, double tauxTva, int projetId) {
+    public Composant(int id, String nom, TypeComposant typeComposant, double tauxTva, int projetId) {
+        this.id = id;
         this.nom = nom;
         this.typeComposant = typeComposant;
         this.tauxTva = tauxTva;

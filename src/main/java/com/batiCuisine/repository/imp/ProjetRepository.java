@@ -1,5 +1,8 @@
 package com.batiCuisine.repository.imp;
 
+import com.batiCuisine.enums.EtatProjet;
+import com.batiCuisine.enums.TypeComposant;
+import com.batiCuisine.model.Client;
 import com.batiCuisine.model.Project;
 import com.batiCuisine.repository.interf.ProjetInterface;
 import com.batiCuisine.util.JdcbConnection;
@@ -8,6 +11,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 
 public class ProjetRepository implements ProjetInterface {
 
@@ -33,13 +37,54 @@ public class ProjetRepository implements ProjetInterface {
         return -1;
     }
 
-    public void updateProjectCost(int projetId, double coutTotal) throws SQLException {
+    public void updateCoutTotal(int projetId, double coutTotal, double margeBeneficiaire) throws SQLException {
         Connection connection = JdcbConnection.getConnection();
-        String query = "UPDATE projets SET cout_total = ? WHERE id = ?";
+        String query = "UPDATE projets SET cout_total = ?, marge_beneficiaire = ? WHERE id = ?";
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setDouble(1, coutTotal);
-            stmt.setInt(2, projetId);
+            stmt.setDouble(2, margeBeneficiaire);
+            stmt.setInt(3, projetId);
             stmt.executeUpdate();
         }
     }
+
+    public Optional<Project> findById(int projetId) throws SQLException {
+        Connection connection = JdcbConnection.getConnection();
+        String query = "SELECT p.*, c.*" +
+                "FROM projets p " +
+                "JOIN clients c ON p.client_id = c.id " +
+                "WHERE p.id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setInt(1, projetId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                Client client = new Client(
+                        rs.getInt("id"),
+                        rs.getString("nom"),
+                        rs.getString("adresse"),
+                        rs.getString("telephone"),
+                        rs.getBoolean("est_professionnel"),
+                        rs.getDouble("remise")
+                );
+                Project project = new Project(
+                        rs.getInt("id"),
+                        rs.getString("nom_projet"),
+                        rs.getDouble("marge_beneficiaire"),
+                        rs.getDouble("cout_total"),
+                        EtatProjet.valueOf(rs.getString("etat_projet")),
+                        rs.getDouble("surface"),
+                        rs.getInt("client_id"),
+                        client
+                );
+                return Optional.of(project);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new SQLException("Erreur lors de la récupération du projet avec l'ID : " + projetId, e);
+        }
+
+        return Optional.empty();
+    }
+
 }

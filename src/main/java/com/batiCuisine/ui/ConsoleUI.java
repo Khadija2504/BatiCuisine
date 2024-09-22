@@ -1,13 +1,17 @@
 package com.batiCuisine.ui;
 
 import com.batiCuisine.enums.TypeComposant;
+import com.batiCuisine.model.Client;
 import com.batiCuisine.model.Labor;
 import com.batiCuisine.model.Material;
+import com.batiCuisine.model.Project;
 import com.batiCuisine.service.ClientService;
 import com.batiCuisine.service.ComposantService;
 import com.batiCuisine.service.ProjetService;
 
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 
 public class ConsoleUI {
@@ -43,7 +47,7 @@ public class ConsoleUI {
         int clientId = -1;
 
         System.out.println("----- Recherche d'un client -----");
-        System.out.print("Souhaitez-vous chercher un client existant ou en ajouter un nouveau ? ");
+        System.out.print("Souhaitez-vous chercher un client existant ou en ajouter un nouveau ? \n");
         System.out.println("1. Chercher un client existant");
         System.out.println("2. Ajouter un nouveau client");
         int choice = scanner.nextInt();
@@ -51,6 +55,11 @@ public class ConsoleUI {
 
         switch (choice) {
             case 1:
+                clientId = searchClientByNameUI();
+                if (clientId == -1) {
+                    System.out.println("Client introuvable.");
+                    return;
+                }
                 break;
             case 2:
                 clientId = AddNewClient();
@@ -75,7 +84,7 @@ public class ConsoleUI {
 
             try {
                 int projectId = projetService.addProject(projectName, surface, clientId);
-                System.out.println("Projet créé avec succès avec l'ID: " + projectId);
+                System.out.println("Projet créé avec succès avec le nom: " + projectName);
                 System.out.println("----- Ajout des matériaux -----");
                 AddNewMaterial(projectId);
             } catch (SQLException e) {
@@ -101,7 +110,7 @@ public class ConsoleUI {
         System.out.print("Entrez le coefficient de qualité du matériau (1.0 = standard, > 1.0 = haute qualité) : ");
         double coefficientQualite = scanner.nextDouble();
 
-        Material materiaux = new Material(materialName, TypeComposant.Materiel,0, projetId, coutTransport, coefficientQualite, coutUnitaire, quantite);
+        Material materiaux = new Material(0, materialName, TypeComposant.Materiel,0, projetId, coutTransport, coefficientQualite, coutUnitaire, quantite);
 
         try {
             composantService.createMateriaux(materiaux);
@@ -122,6 +131,7 @@ public class ConsoleUI {
     public void AddNewMain_doeuvre(int projetId) {
         System.out.println("Entrez le type de main-d'œuvre (e.g., Ouvrier de base, Spécialiste): ");
         String laborType = scanner.nextLine();
+        scanner.nextLine();
         System.out.println("Entrez le taux horaire de cette main-d'œuvre (€/h) : ");
         double tauxHoraire = scanner.nextDouble();
 
@@ -131,24 +141,152 @@ public class ConsoleUI {
         System.out.print("Entrez le facteur de productivité (1.0 = standard, > 1.0 = haute productivité) : ");
         double facteurProductivite = scanner.nextDouble();
 
-        Labor labor = new Labor(laborType, TypeComposant.Materiel,0, projetId, tauxHoraire, heuresTrav, facteurProductivite);
+        Labor labor = new Labor(0, laborType, TypeComposant.Materiel,0, projetId, tauxHoraire, heuresTrav, facteurProductivite);
 
         try {
             composantService.createMainDoeuvre(labor);
             System.out.println("Main-d'œuvre ajoutée avec succès !");
-            System.out.printf("Voulez-vous ajouter un autre type de main-d'œuvre ? (y/n) : ");
+            System.out.println("Voulez-vous ajouter un autre type de main-d'œuvre ? (y/n) : ");
             char answer = scanner.next().charAt(0);
             if(answer == 'y') {
                 AddNewMain_doeuvre(projetId);
             } else {
                 System.out.println("----- Calcul du coût total -----");
-                
+                calcCoutTotal(projetId);
             }
         } catch (SQLException | IllegalArgumentException e) {
             System.err.println("Error creating labor: " + e.getMessage());
         }
     }
 
+    public void calcCoutTotal(int projetId) {
+        Project project = null;
+        try {
+            project = projetService.getProjectById(projetId);
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la récupération du projet : " + e.getMessage());
+            return;
+        }
+        List<Material> materials = composantService.getMateriauxByProject(projetId);
+        List<Labor> labors = composantService.getMainDoeuvreByProject(projetId);
+
+        double totalMatCost = 0;
+        double totalLaborCost = 0;
+
+        System.out.println("Souhaitez-vous appliquer une marge bénéficiaire au projet ? (y/n) : ");
+        char choice2 = scanner.next().charAt(0);
+        double margeBeneficiaire = 0;
+        if (choice2 == 'y') {
+            System.out.println("Entrez le pourcentage de marge bénéficiaire (%) : ");
+            margeBeneficiaire = scanner.nextDouble();
+        }
+
+        System.out.println("Souhaitez-vous appliquer une TVA au projet ? (y/n) : ");
+        char choice1 = scanner.next().charAt(0);
+        double tauxTva = 0;
+        if (choice1 == 'y') {
+            System.out.println("Entrez le pourcentage de TVA (%) : ");
+            tauxTva = scanner.nextDouble();
+        }
+
+        System.out.println("Calcul du coût en cours...");
+
+        System.out.println("----- Résultat du Calcul -----");
+
+        System.out.println("Détails du projet:");
+        System.out.println("- Nom du projet : " + project.getNom_projet());
+        System.out.println("- Client : " + project.getClient().getNom());
+        System.out.println("- Surface de la cuisine : " + project.getSurface() + " m²");
+
+        System.out.println("----- Détail des Coûts -----");
+
+        System.out.println("1. Matériaux :");
+        for (Material material : materials) {
+            double matCost = (material.getQuantite() * material.getCoutUnitaire() * material.getCoefficientQualite())
+                    + material.getCoutTransport();
+            totalMatCost += matCost;
+
+            System.out.printf("- %s : %.2f € (quantité : %.2f %s, coût unitaire : %.2f €/%s, qualité : %.1f, transport : %.2f €)\n",
+                    material.getNom(), matCost, material.getQuantite(), material.getCoutUnitaire(), material.getCoutUnitaire(),
+                    material.getCoutUnitaire(), material.getCoefficientQualite(), material.getCoutTransport());
+            int composantId = material.getId();
+            try {
+                composantService.updateTauxTVA(composantId, tauxTva);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        System.out.printf("**Coût total des matériaux avant TVA : %.2f €**\n", totalMatCost);
+
+        System.out.println("2. Main-d'œuvre :");
+        for (Labor labor : labors) {
+            double laborCost = (labor.getTauxHoraire() * labor.getHeuresTravail()) / labor.getProductiviteOuvrier();
+            totalLaborCost += laborCost;
+
+            System.out.printf("- %s : %.2f € (taux horaire : %.2f €/h, heures travaillées : %.2f h, productivité : %.1f)\n",
+                    labor.getNom(), laborCost, labor.getTauxHoraire(), labor.getHeuresTravail(), labor.getProductiviteOuvrier());
+            int composantId = labor.getId();
+            try {
+                composantService.updateTauxTVA(composantId, tauxTva);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        System.out.printf("**Coût total de la main-d'œuvre avant TVA : %.2f €**\n", totalLaborCost);
+
+        double totalCostBeforeTVA = totalMatCost + totalLaborCost;
+
+        double totalWithTVA = totalCostBeforeTVA + (totalCostBeforeTVA * (tauxTva / 100));
+
+        System.out.printf("**Coût total avec TVA (%.0f%%) : %.2f €**\n", tauxTva, totalWithTVA);
+
+        double finalCost = totalWithTVA + (totalWithTVA * (margeBeneficiaire / 100));
+
+        System.out.printf("3. Coût total avant marge : %.2f €\n", totalWithTVA);
+        System.out.printf("4. Marge bénéficiaire (%.0f%%) : %.2f €\n", margeBeneficiaire, finalCost - totalWithTVA);
+        try {
+            projetService.updateProjectCost(projetId, finalCost, margeBeneficiaire);
+            System.out.println("Le coût total du projet est de : " + finalCost + " € (TVA incluse)");
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la mise à jour du coût total : " + e.getMessage());
+        }
+    }
+
+    public int searchClientByNameUI(){
+        System.out.print("Entrez le nom du client à rechercher : ");
+        if (scanner.hasNextLine()) {
+            scanner.nextLine();
+        }
+
+        String name = scanner.nextLine();
+
+        try {
+            Optional<Client> foundClient = clientService.searchClientByName(name);
+
+            if (foundClient.isPresent()) {
+                Client client = foundClient.get();
+                System.out.println("Client trouvé : " + client.getNom());
+                System.out.println("Adresse : " + client.getAddress());
+                System.out.println("Téléphone : " + client.getTelephone());
+                System.out.println("Souhaitez-vous continuer avec ce client ? (y/n) :");
+                String response = scanner.nextLine();
+                if (response.equals("y")) {
+                    return client.getId();
+                } else {
+                    CreateProject();
+                }
+            } else {
+                System.out.println("Aucun client trouvé avec le nom : " + name);
+                return -1;
+            }
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la recherche du client : " + e.getMessage());
+            return -1;
+        }
+        return 0;
+    }
 
     public int AddNewClient() {
         Scanner scanner = new Scanner(System.in);

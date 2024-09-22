@@ -41,6 +41,54 @@ public class ComposantRepository {
         }
     }
 
+    public List<Material> getMateriauxByProject(int projetId) throws SQLException {
+        Connection connection = JdcbConnection.getConnection();
+        List<Material> materials = new ArrayList<>();
+        String query = "SELECT * FROM materiaux WHERE projet_id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setInt(1, projetId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                Material material = new Material(
+                        rs.getInt("id"),
+                        rs.getString("nom"),
+                        TypeComposant.valueOf(rs.getString("type_composant")),
+                        rs.getDouble("taux_tva"),
+                        rs.getInt("projet_id"),
+                        rs.getDouble("cout_transport"),
+                        rs.getDouble("coefficient_qualite"),
+                        rs.getDouble("cout_unitaire"),
+                        rs.getDouble("quantite")
+                );
+                materials.add(material);
+            }
+        }
+        return materials;
+    }
+
+    public List<Labor> getMainDoeuvreByProject(int projetId) throws SQLException {
+        Connection connection = JdcbConnection.getConnection();
+        List<Labor> labors = new ArrayList<>();
+        String query = "SELECT * FROM main_doeuvre WHERE projet_id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setInt(1, projetId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                Labor labor = new Labor(
+                        rs.getInt("id"),
+                        rs.getString("nom"),
+                        TypeComposant.valueOf(rs.getString("type_composant")),
+                        rs.getDouble("taux_tva"),
+                        rs.getInt("projet_id"),
+                        rs.getDouble("taux_horaire"),
+                        rs.getDouble("heures_travail"),
+                        rs.getDouble("productivite_ouvrier")
+                );
+                labors.add(labor);
+            }
+        }
+        return labors;
+    }
 
     private void saveLabor(Labor mainDoeuvre) throws SQLException {
         TypeComposant main_doeuvre = TypeComposant.Main_doeuvre;
@@ -59,4 +107,23 @@ public class ComposantRepository {
         }
     }
 
+    public void updateTauxTVA(int composantId, double tauxTVA) throws SQLException {
+        Connection connection = JdcbConnection.getConnection();
+        String sql = "UPDATE composants SET taux_tva = ? WHERE id = ?";
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setDouble(1, tauxTVA);
+            statement.setInt(2, composantId);
+
+            int rowsAffected = statement.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Taux de TVA mis à jour pour le composant ID : " + composantId);
+            } else {
+                System.out.println("Aucun composant trouvé avec l'ID : " + composantId);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new SQLException("Erreur lors de la mise à jour du taux de TVA pour le composant avec l'ID : " + composantId, e);
+        }
+    }
 }

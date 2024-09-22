@@ -10,6 +10,18 @@ public class Project {
     private EtatProjet etat_projet;
     private double surface;
     private int client_id;
+    private Client client;
+
+    public Project(int id, String nom_projet, double marge_beneficiaire, double cout_total, EtatProjet etat_projet, double surface, int client_id, Client client) {
+        this.id = id;
+        this.nom_projet = nom_projet;
+        this.marge_beneficiaire = marge_beneficiaire;
+        this.cout_total = cout_total;
+        this.etat_projet = etat_projet;
+        this.surface = surface;
+        this.client_id = client_id;
+        this.client = client;
+    }
 
     public Project(int id, String nom_projet, double marge_beneficiaire, double cout_total, EtatProjet etat_projet, double surface, int client_id) {
         this.id = id;
@@ -75,5 +87,9 @@ public class Project {
 
     public void setClient_id(int client_id) {
         this.client_id = client_id;
+    }
+
+    public Client getClient() {
+        return client;
     }
 }
