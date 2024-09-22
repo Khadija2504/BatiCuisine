@@ -1,7 +1,6 @@
 package com.batiCuisine.repository.imp;
 
 import com.batiCuisine.enums.EtatProjet;
-import com.batiCuisine.enums.TypeComposant;
 import com.batiCuisine.model.Client;
 import com.batiCuisine.model.Project;
 import com.batiCuisine.repository.interf.ProjetInterface;
@@ -11,6 +10,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class ProjetRepository implements ProjetInterface {
@@ -23,7 +24,6 @@ public class ProjetRepository implements ProjetInterface {
         preparedStatement.setString(1, project.getNom_projet());
         preparedStatement.setDouble(2, project.getSurface());
         preparedStatement.setInt(3, project.getClient_id());
-        preparedStatement.executeUpdate();
         int affectedRows = preparedStatement.executeUpdate();
 
         if (affectedRows > 0) {
@@ -37,6 +37,7 @@ public class ProjetRepository implements ProjetInterface {
         return -1;
     }
 
+    @Override
     public void updateCoutTotal(int projetId, double coutTotal, double margeBeneficiaire) throws SQLException {
         Connection connection = JdcbConnection.getConnection();
         String query = "UPDATE projets SET cout_total = ?, marge_beneficiaire = ? WHERE id = ?";
@@ -48,6 +49,7 @@ public class ProjetRepository implements ProjetInterface {
         }
     }
 
+    @Override
     public Optional<Project> findById(int projetId) throws SQLException {
         Connection connection = JdcbConnection.getConnection();
         String query = "SELECT p.*, c.*" +
@@ -85,6 +87,29 @@ public class ProjetRepository implements ProjetInterface {
         }
 
         return Optional.empty();
+    }
+
+    @Override
+    public List<Project> getAllProjects() throws SQLException {
+        Connection connection = JdcbConnection.getConnection();
+        List<Project> projects = new ArrayList<>();
+        String sql = "SELECT * FROM projets";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                Project project = new Project(
+                        rs.getInt("id"),
+                        rs.getString("nom_projet"),
+                        rs.getDouble("marge_beneficiaire"),
+                        rs.getDouble("cout_total"),
+                        EtatProjet.valueOf(rs.getString("etat_projet")),
+                        rs.getDouble("surface"),
+                        rs.getInt("client_id")
+                );
+                projects.add(project);
+            }
+        }
+        return projects;
     }
 
 }

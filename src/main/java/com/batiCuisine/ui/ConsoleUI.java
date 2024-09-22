@@ -1,10 +1,7 @@
 package com.batiCuisine.ui;
 
 import com.batiCuisine.enums.TypeComposant;
-import com.batiCuisine.model.Client;
-import com.batiCuisine.model.Labor;
-import com.batiCuisine.model.Material;
-import com.batiCuisine.model.Project;
+import com.batiCuisine.model.*;
 import com.batiCuisine.service.ClientService;
 import com.batiCuisine.service.ComposantService;
 import com.batiCuisine.service.ProjetService;
@@ -16,9 +13,9 @@ import java.util.Scanner;
 
 public class ConsoleUI {
     Scanner scanner = new Scanner(System.in);
-    private ClientService clientService = new ClientService();
-    private ProjetService projetService = new ProjetService();
-    private ComposantService composantService = new ComposantService();
+    private final ClientService clientService = new ClientService();
+    private final ProjetService projetService = new ProjetService();
+    private final ComposantService composantService = new ComposantService();
 
     public void DisplayMenu() {
         System.out.println("----- Bienvenue dans l'application de gestion des projets de rénovation de cuisines -----");
@@ -33,6 +30,9 @@ public class ConsoleUI {
             switch (choice) {
                 case 1:
                     CreateProject();
+                    break;
+                case 2:
+                    displayAllProjects();
                     break;
                 case 4:
                     return;
@@ -75,29 +75,26 @@ public class ConsoleUI {
                 return;
         }
 
-        if (clientId != -1) {
-            System.out.println("-----  Création d'un Nouveau Projet -----");
-            System.out.println("Entrez le nom du projet : ");
-            String projectName = scanner.nextLine();
-            System.out.println("Entrez la surface de la cuisine (en m²) :");
-            double surface = scanner.nextDouble();
+        System.out.println("-----  Création d'un Nouveau Projet -----");
+        System.out.println("Entrez le nom du projet : ");
+        String projectName = scanner.nextLine();
+        System.out.println("Entrez la surface de la cuisine (en m²) :");
+        double surface = scanner.nextDouble();
 
-            try {
-                int projectId = projetService.addProject(projectName, surface, clientId);
-                System.out.println("Projet créé avec succès avec le nom: " + projectName);
-                System.out.println("----- Ajout des matériaux -----");
-                AddNewMaterial(projectId);
-            } catch (SQLException e) {
-                System.out.println("Impossible d'ajouter le projet en raison de : " + e.getMessage());
-            }
-        } else {
-            System.out.println("ID du client non valide, impossible de créer le projet.");
+        try {
+            int projectId = projetService.addProject(projectName, surface, clientId);
+            System.out.println("Projet créé avec succès avec le nom: " + projectName);
+            System.out.println("----- Ajout des matériaux -----");
+            AddNewMaterial(projectId);
+        } catch (SQLException e) {
+            System.out.println("Impossible d'ajouter le projet en raison de : " + e.getMessage());
         }
     }
 
     public void AddNewMaterial(int projetId) {
         System.out.println("Entrez le nom du matériau: ");
         String materialName = scanner.nextLine();
+        scanner.next();
         System.out.println("Entrez la quantité de ce matériau (en m²): ");
         double quantite = scanner.nextDouble();
 
@@ -152,14 +149,29 @@ public class ConsoleUI {
                 AddNewMain_doeuvre(projetId);
             } else {
                 System.out.println("----- Calcul du coût total -----");
-                calcCoutTotal(projetId);
+                System.out.println("Souhaitez-vous appliquer une marge bénéficiaire au projet ? (y/n) : ");
+                char choice2 = scanner.next().charAt(0);
+                double margeBeneficiaire = 0;
+                if (choice2 == 'y') {
+                    System.out.println("Entrez le pourcentage de marge bénéficiaire (%) : ");
+                    margeBeneficiaire = scanner.nextDouble();
+                }
+
+                System.out.println("Souhaitez-vous appliquer une TVA au projet ? (y/n) : ");
+                char choice1 = scanner.next().charAt(0);
+                double tauxTva = 0;
+                if (choice1 == 'y') {
+                    System.out.println("Entrez le pourcentage de TVA (%) : ");
+                    tauxTva = scanner.nextDouble();
+                }
+                calcCoutTotal(projetId, margeBeneficiaire, tauxTva);
             }
         } catch (SQLException | IllegalArgumentException e) {
             System.err.println("Error creating labor: " + e.getMessage());
         }
     }
 
-    public void calcCoutTotal(int projetId) {
+    public void calcCoutTotal(int projetId, double margeBeneficiaire, double tauxTva) {
         Project project = null;
         try {
             project = projetService.getProjectById(projetId);
@@ -172,22 +184,6 @@ public class ConsoleUI {
 
         double totalMatCost = 0;
         double totalLaborCost = 0;
-
-        System.out.println("Souhaitez-vous appliquer une marge bénéficiaire au projet ? (y/n) : ");
-        char choice2 = scanner.next().charAt(0);
-        double margeBeneficiaire = 0;
-        if (choice2 == 'y') {
-            System.out.println("Entrez le pourcentage de marge bénéficiaire (%) : ");
-            margeBeneficiaire = scanner.nextDouble();
-        }
-
-        System.out.println("Souhaitez-vous appliquer une TVA au projet ? (y/n) : ");
-        char choice1 = scanner.next().charAt(0);
-        double tauxTva = 0;
-        if (choice1 == 'y') {
-            System.out.println("Entrez le pourcentage de TVA (%) : ");
-            tauxTva = scanner.nextDouble();
-        }
 
         System.out.println("Calcul du coût en cours...");
 
@@ -253,6 +249,27 @@ public class ConsoleUI {
             System.err.println("Erreur lors de la mise à jour du coût total : " + e.getMessage());
         }
     }
+
+    public void displayAllProjects() {
+        try {
+            List<Project> projects = projetService.getAllProjects();
+            System.out.println("----- L'affichage des projets existants -----");
+
+            for (Project project : projects) {
+                List<Composant> composants = composantService.getAllComposants(project.getId());
+                double totalTauxTva = 0;
+
+                for (Composant comp : composants) {
+                    totalTauxTva += comp.getTauxTva();
+                }
+
+                calcCoutTotal(project.getId(), project.getMarge_beneficiaire(), totalTauxTva);
+            }
+        } catch (Exception e) {
+            System.out.println("Error during displaying all projects: " + e.getMessage());
+        }
+    }
+
 
     public int searchClientByNameUI(){
         System.out.print("Entrez le nom du client à rechercher : ");

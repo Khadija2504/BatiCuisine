@@ -54,3 +54,17 @@ CREATE TABLE devis (
                        accepte BOOLEAN DEFAULT FALSE,
                        projet_id INT REFERENCES projets(id) ON DELETE CASCADE
 );
+
+
+-- remove all of the tables
+
+DO $$
+DECLARE
+r RECORD;
+BEGIN
+FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public')
+    LOOP
+        EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
+END LOOP;
+END $$;
+

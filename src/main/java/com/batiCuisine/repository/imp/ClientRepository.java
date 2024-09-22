@@ -22,7 +22,6 @@ public class ClientRepository implements ClientInterface {
         preparedStatement.setString(3, client.getTelephone());
         preparedStatement.setBoolean(4, client.getEst_professionnel());
         preparedStatement.setDouble(5, client.getRemise());
-        preparedStatement.executeUpdate();
         int affectedRows = preparedStatement.executeUpdate();
 
         if (affectedRows > 0) {
@@ -36,6 +35,7 @@ public class ClientRepository implements ClientInterface {
         return -1;
     }
 
+    @Override
     public Optional<Client> findClientByName(String name) throws SQLException {
         Connection connection = JdcbConnection.getConnection();
         String sql = "SELECT * FROM clients WHERE nom = ?";
@@ -58,7 +58,6 @@ public class ClientRepository implements ClientInterface {
             e.printStackTrace();
             throw new SQLException("Erreur lors de la récupération du client avec le nom : " + name, e);
         }
-
         return Optional.empty();
     }
 }

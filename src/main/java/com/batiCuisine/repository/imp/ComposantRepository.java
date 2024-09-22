@@ -40,7 +40,6 @@ public class ComposantRepository {
             stmt.executeUpdate();
         }
     }
-
     public List<Material> getMateriauxByProject(int projetId) throws SQLException {
         Connection connection = JdcbConnection.getConnection();
         List<Material> materials = new ArrayList<>();
@@ -89,6 +88,28 @@ public class ComposantRepository {
         }
         return labors;
     }
+
+    public List<Composant> getAllComposants(int projetId) throws SQLException {
+        Connection connection = JdcbConnection.getConnection();
+        List<Composant> composants = new ArrayList<>();
+        String query = "SELECT * FROM composants WHERE projet_id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setInt(1, projetId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                Composant composant = new Composant(
+                        rs.getInt("id"),
+                        rs.getString("nom"),
+                        TypeComposant.valueOf(rs.getString("type_composant")),
+                        rs.getDouble("taux_tva"),
+                        rs.getInt("projet_id")
+                );
+                composants.add(composant);
+            }
+        }
+        return composants;
+    }
+
 
     private void saveLabor(Labor mainDoeuvre) throws SQLException {
         TypeComposant main_doeuvre = TypeComposant.Main_doeuvre;

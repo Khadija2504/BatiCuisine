@@ -1,5 +1,6 @@
 package com.batiCuisine.service;
 
+import com.batiCuisine.model.Composant;
 import com.batiCuisine.model.Labor;
 import com.batiCuisine.model.Material;
 import com.batiCuisine.repository.imp.ComposantRepository;
@@ -8,7 +9,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class ComposantService {
-    private ComposantRepository repository = new ComposantRepository();
+    private final ComposantRepository repository = new ComposantRepository();
 
     public void createMateriaux(Material materiaux) throws SQLException {
         repository.save(materiaux);
@@ -38,5 +39,14 @@ public class ComposantService {
 
     public void updateTauxTVA(int composantId, double tauxTVA) throws SQLException {
         repository.updateTauxTVA(composantId, tauxTVA);
+    }
+
+    public List<Composant> getAllComposants(int projectId) {
+        try {
+            return repository.getAllComposants(projectId);
+        } catch (SQLException e) {
+            System.out.println("Erreur lors de la récupération des composants : " + e.getMessage());
+            return null;
+        }
     }
 }
