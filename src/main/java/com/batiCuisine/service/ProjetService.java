@@ -4,6 +4,7 @@ import com.batiCuisine.enums.EtatProjet;
 import com.batiCuisine.model.Project;
 import com.batiCuisine.repository.imp.ProjetRepository;
 
+import javax.naming.Name;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
@@ -31,5 +32,13 @@ public class ProjetService {
 
     public List<Project> getAllProjects() throws SQLException {
         return projetRepository.getAllProjects();
+    }
+
+    public Optional<Project> getProjectByName(String Name) throws SQLException {
+        return projetRepository.findProjectByName(Name);
+    }
+
+    public void updateProjectStatus (int projetId, int etatProjet) throws SQLException {
+        projetRepository.updateEtatProjet(projetId, etatProjet);
     }
 }

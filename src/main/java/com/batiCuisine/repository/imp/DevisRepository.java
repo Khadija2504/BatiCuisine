@@ -1,7 +1,7 @@
 package com.batiCuisine.repository.imp;
 
+import com.batiCuisine.repository.interf.DevisInterface;
 import com.batiCuisine.model.Devis;
-import com.batiCuisine.model.Project;
 import com.batiCuisine.util.JdcbConnection;
 
 import java.sql.Connection;
@@ -9,7 +9,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class DevisRepository {
+public class DevisRepository implements DevisInterface {
+    @Override
     public void createDevis(Devis devis) throws SQLException {
         Connection connection = JdcbConnection.getConnection();
         String sql = "INSERT INTO devis (montant_estime, date_emission, date_validite, projet_id, accepte) " +
@@ -24,6 +25,7 @@ public class DevisRepository {
             stmt.executeUpdate();
         }
     }
+    @Override
     public Devis getDevisByProjectId(int project_id) throws SQLException {
         Connection connection = JdcbConnection.getConnection();
         String sql = "SELECT * FROM devis WHERE projet_id=?";

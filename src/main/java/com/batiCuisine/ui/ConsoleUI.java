@@ -1,12 +1,13 @@
 package com.batiCuisine.ui;
 
+import com.batiCuisine.enums.EtatProjet;
 import com.batiCuisine.enums.TypeComposant;
 import com.batiCuisine.model.*;
 import com.batiCuisine.service.ClientService;
 import com.batiCuisine.service.ComposantService;
 import com.batiCuisine.service.DevisService;
 import com.batiCuisine.service.ProjetService;
-import com.batiCuisine.util.ValidatorDate;
+import com.batiCuisine.util.Validator;
 
 import java.sql.Date;
 import java.sql.SQLException;
@@ -20,7 +21,7 @@ public class ConsoleUI {
     private final ProjetService projetService = new ProjetService();
     private final ComposantService composantService = new ComposantService();
     private final DevisService devisService = new DevisService();
-    private final ValidatorDate validatorDate = new ValidatorDate();
+    private final Validator validatorDate = new Validator();
 
     public void DisplayMenu() {
         System.out.println("----- Bienvenue dans l'application de gestion des projets de rénovation de cuisines -----");
@@ -28,7 +29,7 @@ public class ConsoleUI {
             System.out.println("----- Menu Principal -----");
             System.out.println("1. Créer un nouveau projet");
             System.out.println("2. Afficher les projets existants");
-            System.out.println("3. Calculer le coût d'un projet");
+            System.out.println("3. Mise à jour d'état de projet");
             System.out.println("4. Quitter");
             int choice = scanner.nextInt();
 
@@ -38,6 +39,9 @@ public class ConsoleUI {
                     break;
                 case 2:
                     displayAllProjects();
+                    break;
+                case 3:
+                    searchProjectByName();
                     break;
                 case 4:
                     return;
@@ -390,6 +394,71 @@ public class ConsoleUI {
             System.out.println("Fin du details de projet");
         } catch (Exception e) {
             System.out.println(e.getMessage());
+        }
+    }
+
+    public void searchProjectByName() {
+        System.out.println("Entrez le nom du projet à rechercher : ");
+        if (scanner.hasNextLine()) {
+            scanner.nextLine();
+        }
+
+        String name = scanner.nextLine();
+
+        try{
+            Optional<Project> foundProject = projetService.getProjectByName(name);
+            if(foundProject.isPresent()) {
+                Project project = foundProject.get();
+                System.out.println("Détails du projet:");
+                System.out.println("- Nom du projet : " + project.getNom_projet());
+                System.out.println("- Surface de la cuisine : " + project.getSurface() + " m²");
+                System.out.println("- Marge bénéficiaire : " + project.getMarge_beneficiaire() + "%");
+                System.out.println("- Coût total calculé : " + project.getCout_total() + "€");
+                if(project.getEtat_projet().equals(EtatProjet.en_cours.name())) {
+                    System.out.println("1. Mettre à jour le statut du projet " + project.getNom_projet());
+                    System.out.println("2. Back");
+                    int choice = scanner.nextInt();
+                    switch (choice) {
+                        case 1:
+                            updateProjectStatus(project.getId());
+                            break;
+                        case 2:
+                            return ;
+                        default:
+                            System.out.println("Invalid data form");
+                    }
+                } else {
+                    System.out.println("Le projet ete deja termine!");
+                    System.out.println("1. Rechercher un autre projet");
+                    System.out.println("2. Menu principales");
+                    int choice = scanner.nextInt();
+                    scanner.nextLine();
+                    switch (choice) {
+                        case 1:
+                            searchProjectByName();
+                            break;
+                        case 2:
+                            DisplayMenu();
+                            break;
+                    }
+                }
+            }
+        }catch (SQLException e) {
+            System.err.println("Erreur lors de la recherche du projet : " + e.getMessage());
+        }
+    }
+
+    public void updateProjectStatus(int projectId) {
+        System.out.println("Update project status");
+        System.out.println("Choisez l'etat de projet :");
+        System.out.println("1. termine");
+        System.out.println("2. annule");
+        int choice = scanner.nextInt();
+        try {
+            projetService.updateProjectStatus(projectId, choice);
+            System.out.println("Le projet a été mis à jour avec succès!");
+        } catch (SQLException e) {
+            System.err.println(e.getMessage());
         }
     }
 

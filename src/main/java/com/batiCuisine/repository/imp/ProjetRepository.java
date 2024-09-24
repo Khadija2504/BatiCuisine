@@ -48,6 +48,22 @@ public class ProjetRepository implements ProjetInterface {
             stmt.executeUpdate();
         }
     }
+@Override
+    public void updateEtatProjet(int projetId, int etatProjet) throws SQLException {
+        Connection connection = JdcbConnection.getConnection();
+        EtatProjet etatTermine = EtatProjet.termine;
+        EtatProjet etatAnnule = EtatProjet.annule;
+        String query = "UPDATE projets SET etat_projet = ?::etat_projet WHERE id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            if (etatProjet == 1) {
+                stmt.setString(1, etatTermine.name());
+            } else {
+                stmt.setString(1, etatAnnule.name());
+            }
+            stmt.setInt(2, projetId);
+            stmt.executeUpdate();
+        }
+    }
 
     @Override
     public Optional<Project> findById(int projetId) throws SQLException {
@@ -110,6 +126,30 @@ public class ProjetRepository implements ProjetInterface {
             }
         }
         return projects;
+    }
+@Override
+    public Optional<Project> findProjectByName(String name) throws SQLException {
+        Connection connection = JdcbConnection.getConnection();
+        String sql = "SELECT * FROM projets WHERE nom_projet = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, name);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                Project project = new Project(
+                        rs.getInt("id"),
+                        rs.getString("nom_projet"),
+                        rs.getDouble("marge_beneficiaire"),
+                        rs.getDouble("cout_total"),
+                        EtatProjet.valueOf(rs.getString("etat_projet")),
+                        rs.getDouble("surface"),
+                        rs.getInt("client_id")
+                );
+                return Optional.of(project);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error daring finding project with that name : " + e.getMessage());
+        }
+        return Optional.empty();
     }
 
 }

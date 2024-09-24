@@ -4,7 +4,7 @@ import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-public class ValidatorDate {
+public class Validator {
     public Date convertToDate(String dateInput) {
         SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy");
         try {

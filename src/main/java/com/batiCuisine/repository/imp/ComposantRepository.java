@@ -1,5 +1,6 @@
 package com.batiCuisine.repository.imp;
 
+import com.batiCuisine.repository.interf.ComposantInterface;
 import com.batiCuisine.enums.TypeComposant;
 import com.batiCuisine.model.Composant;
 import com.batiCuisine.model.Labor;
@@ -13,8 +14,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ComposantRepository {
-
+public class ComposantRepository implements ComposantInterface {
+    @Override
     public void save(Composant composant) throws SQLException {
         if (composant instanceof Material) {
             saveMaterial((Material) composant);
@@ -23,7 +24,8 @@ public class ComposantRepository {
         }
     }
 
-    private void saveMaterial(Material materiaux) throws SQLException {
+    @Override
+    public void saveMaterial(Material materiaux) throws SQLException {
         TypeComposant material = TypeComposant.Materiel;
         Connection connection = JdcbConnection.getConnection();
         String sql = "INSERT INTO materiaux (nom, cout_unitaire, quantite, type_composant, projet_id, cout_transport, coefficient_qualite) " +
@@ -40,6 +42,7 @@ public class ComposantRepository {
             stmt.executeUpdate();
         }
     }
+    @Override
     public List<Material> getMateriauxByProject(int projetId) throws SQLException {
         Connection connection = JdcbConnection.getConnection();
         List<Material> materials = new ArrayList<>();
@@ -64,7 +67,7 @@ public class ComposantRepository {
         }
         return materials;
     }
-
+    @Override
     public List<Labor> getMainDoeuvreByProject(int projetId) throws SQLException {
         Connection connection = JdcbConnection.getConnection();
         List<Labor> labors = new ArrayList<>();
@@ -88,7 +91,7 @@ public class ComposantRepository {
         }
         return labors;
     }
-
+    @Override
     public List<Composant> getAllComposants(int projetId) throws SQLException {
         Connection connection = JdcbConnection.getConnection();
         List<Composant> composants = new ArrayList<>();
@@ -110,8 +113,8 @@ public class ComposantRepository {
         return composants;
     }
 
-
-    private void saveLabor(Labor mainDoeuvre) throws SQLException {
+    @Override
+    public void saveLabor(Labor mainDoeuvre) throws SQLException {
         TypeComposant main_doeuvre = TypeComposant.Main_doeuvre;
         Connection connection = JdcbConnection.getConnection();
         String sql = "INSERT INTO main_doeuvre (nom, type_composant, projet_id, taux_horaire, heures_travail, productivite_ouvrier) " +
@@ -127,7 +130,7 @@ public class ComposantRepository {
             stmt.executeUpdate();
         }
     }
-
+    @Override
     public void updateTauxTVA(int composantId, double tauxTVA) throws SQLException {
         Connection connection = JdcbConnection.getConnection();
         String sql = "UPDATE composants SET taux_tva = ? WHERE id = ?";

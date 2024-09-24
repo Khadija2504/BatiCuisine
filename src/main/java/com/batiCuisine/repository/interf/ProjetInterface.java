@@ -11,4 +11,6 @@ public interface ProjetInterface {
     void updateCoutTotal(int projetId, double coutTotal, double margeBeneficiaire) throws SQLException;
     Optional<Project> findById(int projetId) throws SQLException;
     List<Project> getAllProjects() throws SQLException;
+    public void updateEtatProjet(int projetId, int etatProjet) throws SQLException;
+    public Optional<Project> findProjectByName(String name) throws SQLException;
     }
