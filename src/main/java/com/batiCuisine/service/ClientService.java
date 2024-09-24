@@ -10,7 +10,7 @@ public class ClientService {
     private final ClientRepository clientRepository = new ClientRepository();
 
     public int addClient(String nom, String adresse, String telephone, boolean est_professionnel, double remise) throws SQLException {
-        if (clientRepository.findClientByName(nom) == null) {
+        if (!clientRepository.findClientByName(nom).isPresent()) {
             Client client = new Client(0, nom, adresse, telephone, est_professionnel, remise);
             return clientRepository.addClient(client);
         }

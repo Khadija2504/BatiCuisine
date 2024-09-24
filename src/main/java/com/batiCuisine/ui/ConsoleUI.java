@@ -10,12 +10,14 @@ import com.batiCuisine.service.ProjetService;
 import com.batiCuisine.util.Validator;
 
 import java.sql.Date;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Scanner;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Scanner;
-import java.util.stream.Stream;
 
 public class ConsoleUI {
     Scanner scanner = new Scanner(System.in);
@@ -119,6 +121,7 @@ public class ConsoleUI {
     public void AddNewMaterial(int projetId) {
         System.out.println("Entrez le nom du matériau : ");
         String materialName = scanner.nextLine();
+        materialName = scanner.nextLine();
 
         if (!Validator.isValidMaterialName(materialName)) {
             System.out.println("Le nom du matériau est invalide (caractères spéciaux non autorisés ou nom trop court).");
@@ -178,6 +181,7 @@ public class ConsoleUI {
     public void AddNewMain_doeuvre(int projetId) {
         System.out.println("Entrez le type de main-d'œuvre (e.g., Ouvrier de base, Spécialiste) : ");
         String laborType = scanner.nextLine();
+        laborType = scanner.nextLine();
 
         if (!Validator.isValidLaborType(laborType)) {
             System.out.println("Le type de main-d'œuvre est invalide.");
@@ -336,29 +340,43 @@ public class ConsoleUI {
 
     public void saveDevis(double finalCost, int projetId) {
         Scanner scanner = new Scanner(System.in);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
         System.out.println("----- Enregistrement du Devis -----");
-        System.out.println("Entrez la date d'émission du devis (format : jj/mm/aaaa) :");
-        String emissionDateInput = scanner.nextLine();
-        System.out.println("Entrez la date de validité du devis (format : jj/mm/aaaa) :");
-        String validateDateInput = scanner.nextLine();
+        LocalDate emissionDate = null;
+        LocalDate validateDate = null;
 
-        Date emissionDate = validatorDate.convertToDate(emissionDateInput);
-        Date validateDate = validatorDate.convertToDate(validateDateInput);
+        while (emissionDate == null) {
+            System.out.println("Entrez la date d'émission du devis (format : jj/mm/aaaa) :");
+            String emissionDateInput = scanner.nextLine();
+            try {
+                emissionDate = LocalDate.parse(emissionDateInput, formatter);
+            } catch (DateTimeParseException e) {
+                System.out.println("Format de date invalide. Veuillez réessayer.");
+            }
+        }
+
+        while (validateDate == null) {
+            System.out.println("Entrez la date de validité du devis (format : jj/mm/aaaa) :");
+            String validateDateInput = scanner.nextLine();
+            try {
+                validateDate = LocalDate.parse(validateDateInput, formatter);
+            } catch (DateTimeParseException e) {
+                System.out.println("Format de date invalide. Veuillez réessayer.");
+            }
+        }
 
         System.out.println("Souhaitez-vous valider le devis ? (y/n) :");
         String choice = scanner.nextLine();
-
         boolean validate = choice.equalsIgnoreCase("y");
 
         try {
-            devisService.createDevis(projetId, finalCost, emissionDate, validateDate, validate);
+            devisService.createDevis(projetId, finalCost, Date.valueOf(emissionDate), Date.valueOf(validateDate), validate);
             System.out.println("Devis enregistré avec succès.");
         } catch (SQLException e) {
             System.out.println("Erreur lors de l'enregistrement du devis : " + e.getMessage());
         }
     }
-
     public void displayAllProjects() {
         try {
             List<Project> projects = projetService.getAllProjects();
@@ -570,7 +588,6 @@ public class ConsoleUI {
                 if (response.equals("y")) {
                     return client.getId();
                 } else {
-                    System.out.println("Création d'un nouveau projet...");
                     CreateProject();
                 }
             } else {
