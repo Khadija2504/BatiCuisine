@@ -5,6 +5,8 @@ import com.batiCuisine.repository.imp.DevisRepository;
 
 import java.sql.Date;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DevisService {
     private final DevisRepository devisRepository = new DevisRepository();
@@ -12,7 +14,13 @@ public class DevisService {
         Devis devis = new Devis(0, calcCoutTotal, date_emission, date_validite,validate,projetId);
         devisRepository.createDevis(devis);
     }
-    public Devis getDevisByProjectId(int devisId) throws SQLException {
-        return devisRepository.getDevisByProjectId(devisId);
+    public Map<Integer, Devis> getDevisByProjectId(int projectId) {
+        try {
+            return devisRepository.getDevisByProjectId(projectId);
+        } catch (SQLException e) {
+            System.out.println("Erreur lors de la récupération des devis : " + e.getMessage());
+            return new HashMap<>();
+        }
     }
+
 }

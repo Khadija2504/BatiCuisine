@@ -4,7 +4,6 @@ import com.batiCuisine.enums.EtatProjet;
 import com.batiCuisine.model.Project;
 import com.batiCuisine.repository.imp.ProjetRepository;
 
-import javax.naming.Name;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
@@ -13,8 +12,14 @@ public class ProjetService {
     EtatProjet etatProjet;
     private final ProjetRepository projetRepository = new ProjetRepository();
     public int addProject (String nom_projet, double surface, int client_id) throws SQLException {
-        Project project = new Project(0, nom_projet, 0, 0, etatProjet, surface, client_id);
-        return projetRepository.addProject(project);
+        if (projetRepository.findProjectByName(nom_projet) == null) {
+            Project project = new Project(0, nom_projet, 0, 0, etatProjet, surface, client_id);
+            return projetRepository.addProject(project);
+        }
+        else {
+            System.out.println("Un projet avec ce nom existe déjà.");
+            return -1;
+        }
     }
 
     public Project getProjectById(int projetId) throws SQLException {

@@ -12,7 +12,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ComposantRepository implements ComposantInterface {
     @Override
@@ -92,13 +94,15 @@ public class ComposantRepository implements ComposantInterface {
         return labors;
     }
     @Override
-    public List<Composant> getAllComposants(int projetId) throws SQLException {
+    public Map<Integer, Composant> getAllComposants(int projetId) throws SQLException {
         Connection connection = JdcbConnection.getConnection();
-        List<Composant> composants = new ArrayList<>();
+        Map<Integer, Composant> composantsMap = new HashMap<>();
         String query = "SELECT * FROM composants WHERE projet_id = ?";
+
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setInt(1, projetId);
             ResultSet rs = stmt.executeQuery();
+
             while (rs.next()) {
                 Composant composant = new Composant(
                         rs.getInt("id"),
@@ -107,11 +111,12 @@ public class ComposantRepository implements ComposantInterface {
                         rs.getDouble("taux_tva"),
                         rs.getInt("projet_id")
                 );
-                composants.add(composant);
+                composantsMap.put(composant.getId(), composant);
             }
         }
-        return composants;
+        return composantsMap;
     }
+
 
     @Override
     public void saveLabor(Labor mainDoeuvre) throws SQLException {

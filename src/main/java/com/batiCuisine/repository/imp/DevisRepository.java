@@ -8,6 +8,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class DevisRepository implements DevisInterface {
     @Override
@@ -26,25 +30,31 @@ public class DevisRepository implements DevisInterface {
         }
     }
     @Override
-    public Devis getDevisByProjectId(int project_id) throws SQLException {
+    public Map<Integer, Devis> getDevisByProjectId(int projectId) throws SQLException {
         Connection connection = JdcbConnection.getConnection();
         String sql = "SELECT * FROM devis WHERE projet_id=?";
+
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, project_id);
+            stmt.setInt(1, projectId);
             ResultSet rs = stmt.executeQuery();
-            if(rs.next()) {
+
+            List<Devis> devisList = new ArrayList<>();
+            while (rs.next()) {
                 Devis devis = new Devis(
-                    rs.getInt("id"),
-                    rs.getDouble("montant_estime"),
-                    rs.getDate("date_emission"),
-                    rs.getDate("date_validite"),
-                    rs.getBoolean("accepte"),
-                    rs.getInt("projet_id")
+                        rs.getInt("id"),
+                        rs.getDouble("montant_estime"),
+                        rs.getDate("date_emission"),
+                        rs.getDate("date_validite"),
+                        rs.getBoolean("accepte"),
+                        rs.getInt("projet_id")
                 );
-                return devis;
+                devisList.add(devis);
             }
+
+            return devisList.stream()
+                    .collect(Collectors.toMap(Devis::getId, devis -> devis));
         }
-        return null;
     }
+
 
 }

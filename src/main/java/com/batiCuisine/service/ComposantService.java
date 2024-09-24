@@ -6,7 +6,9 @@ import com.batiCuisine.model.Material;
 import com.batiCuisine.repository.imp.ComposantRepository;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ComposantService {
     private final ComposantRepository repository = new ComposantRepository();
@@ -41,12 +43,12 @@ public class ComposantService {
         repository.updateTauxTVA(composantId, tauxTVA);
     }
 
-    public List<Composant> getAllComposants(int projectId) {
+    public Map<Integer, Composant> getAllComposants(int projectId) {
         try {
             return repository.getAllComposants(projectId);
         } catch (SQLException e) {
             System.out.println("Erreur lors de la récupération des composants : " + e.getMessage());
-            return null;
+            return new HashMap<>();
         }
     }
 }

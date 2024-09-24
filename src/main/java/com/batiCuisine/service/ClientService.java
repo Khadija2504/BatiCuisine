@@ -10,8 +10,15 @@ public class ClientService {
     private final ClientRepository clientRepository = new ClientRepository();
 
     public int addClient(String nom, String adresse, String telephone, boolean est_professionnel, double remise) throws SQLException {
-        Client client = new Client(0, nom, adresse, telephone, est_professionnel, remise);
-        return clientRepository.addClient(client);
+        if (clientRepository.findClientByName(nom) == null) {
+            Client client = new Client(0, nom, adresse, telephone, est_professionnel, remise);
+            return clientRepository.addClient(client);
+        }
+        else {
+            System.out.println("Un client avec ce nom existe déjà.");
+            return -1;
+        }
+
     }
 
     public Optional<Client> searchClientByName(String name) throws SQLException {
